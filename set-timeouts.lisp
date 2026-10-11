@@ -85,13 +85,14 @@ set."
   #+:mezzano
   (let ((connection (mezzano.network.tcp:tcp-stream-connection (usocket:socket usocket))))
     (setf (mezzano.network.tcp:tcp-connection-timeout connection) read-timeout))
-  ;; the timeouts live on the TcpClient's underlying Socket
   #+:dotcl
-  (let ((socket (dotnet:invoke (usocket:socket usocket) "Client")))
-    (when read-timeout
-      (setf (dotnet:invoke socket "ReceiveTimeout") (round (* 1000 read-timeout))))
-    (when write-timeout
-      (setf (dotnet:invoke socket "SendTimeout") (round (* 1000 write-timeout)))))
+  (when read-timeout
+    (setf (dotcl-bsd-sockets:sockopt-receive-timeout (usocket:socket usocket))
+          read-timeout))
+  #+:dotcl
+  (when write-timeout
+    (setf (dotcl-bsd-sockets:sockopt-send-timeout (usocket:socket usocket))
+          write-timeout))
   #-(or :clisp :allegro :openmcl :sbcl :lispworks :cmu :ecl :abcl :clasp :mezzano
         :dotcl)
   (not-implemented 'set-timeouts))
